@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- WARNING: Eclipse auto-generated file.
+              Any modifications will be overwritten.
+              To include a user specific buildfile here, simply create one in the same
+              directory with the processing instruction <?eclipse.ant.import?>
+              as the first entry and export the buildfile again. -->
+<project basedir="." name="HW16" default="pmd" xmlns:jacoco="antlib:org.jacoco.ant">
+	<property environment="env" />
+	<property name="ECLIPSE_HOME" value="../../Desktop/eclipse_new/eclipse/" />
+	<property name="junit.output.dir" value="junit" />
+	<property name="debuglevel" value="source,lines,vars" />
+	<property name="target" value="1.8" />
+	<property name="source" value="1.8" />
+	<path id="JUnit 4.libraryclasspath">
+		<pathelement location="${env.JUNIT_CS680}" />
+		<pathelement location="${env.HAMCREST_CORE_CS680}" />
+	</path>
+	<path id="HW.classpath">
+		<pathelement location="bin" />
+		<pathelement location="test/bin" />
+		<path refid="JUnit 4.libraryclasspath" />
+	</path>
+	<!-- This is for jacacoo path set -->
+	<taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml">
+		<classpath path="${env.JACOCO_CS680}" />
+	</taskdef>
+	<taskdef name="findbugs" classpath="${env.FINDBUGS_CS680}/lib/findbugs-ant.jar" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" />
+	<property name="findbugspath" value="${env.FINDBUGS_CS680}" />
+	<property name="pmdpath" value="${env.PMD_CS680}" />
+	<target name="init">
+		<mkdir dir="bin" />
+		<mkdir dir="test/bin" />
+		<copy includeemptydirs="false" todir="bin">
+			<fileset dir="src">
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+		<copy includeemptydirs="false" todir="test/bin">
+			<fileset dir="test/src">
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+	</target>
+	<target name="clean">
+		<delete dir="bin" />
+		<delete dir="test/bin" />
+	</target>
+	<target depends="clean" name="cleanall" />
+	<target depends="build-subprojects,build-project" name="build" />
+	<target name="build-subprojects" />
+	<target depends="init" name="build-project">
+		<echo message="${ant.project.name}: ${ant.file}" />
+		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
+			<src path="src" />
+			<classpath refid="HW.classpath" />
+		</javac>
+		<javac debug="true" debuglevel="${debuglevel}" destdir="test/bin" includeantruntime="false" source="${source}" target="${target}">
+			<src path="test/src" />
+			<classpath refid="HW.classpath" />
+		</javac>
+	</target>
+	<target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects" />
+	<target description="copy Eclipse compiler jars to ant lib directory" name="init-eclipse-compiler">
+		<copy todir="${ant.library.dir}">
+			<fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar" />
+		</copy>
+		<unzip dest="${ant.library.dir}">
+			<patternset includes="jdtCompilerAdapter.jar" />
+			<fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar" />
+		</unzip>
+	</target>
+	<target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
+		<property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter" />
+		<antcall target="build" />
+	</target>
+   <!--/* <target name="HW16" depends = "build">
+        <java classname="edu.umb.cs.cs680.HW16" failonerror="true" fork="yes">
+            <classpath refid="HW.classpath"/>
+        </java>
+    </target>*/-->
+	<target name="junit" depends="build">
+		<jacoco:coverage>
+			<junit fork="yes" printsummary="on">
+				<formatter type="plain" usefile="false" />
+				<jvmarg line="-ea" />
+				<classpath refid="HW.classpath" />
+				<batchtest fork="yes">
+					<fileset dir="test/src">
+						<include name="**/*Test*.java" />
+					</fileset>
+				</batchtest>
+			</junit>
+		</jacoco:coverage>
+	</target>
+	<target name="jacocoreport" depends="junit">
+		<jacoco:report>
+			<executiondata>
+				<file file="jacoco.exec" />
+			</executiondata>
+			<structure name="HW16">
+				<classfiles>
+					<fileset dir="bin" />
+				</classfiles>
+				<sourcefiles encoding="UTF-8">
+					<fileset dir="src" />
+				</sourcefiles>
+			</structure>
+			<html destdir="test" />
+		</jacoco:report>
+	</target>
+	<target name="findbugs" depends="jacocoreport">
+		<findbugs output="xml" outputFile="test/findbugs-report.xml" home="${findbugspath}">
+			<sourcePath path="src" />
+			<class location="bin" />
+		</findbugs>
+	</target>
+	<property name="pmd.dir" value="${pmdpath}" />
+	<path id="pmd.classpath">
+		<fileset dir="${pmd.dir}\lib">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	<taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath" />
+	<target name="pmd" depends="findbugs">
+		<pmd shortFilenames="true">
+			<sourceLanguage name="java" version="1.6" />
+			<ruleset>rulesets/java/design.xml</ruleset>
+			<ruleset>java-basic</ruleset>
+			<formatter type="html" toFile="pmd_report.html">
+				<param name="linkPrefix" value="http://pmd.sourceforge.net/xref/" />
+			</formatter>
+			<fileset dir="src" />
+		</pmd>
+	</target>
+</project>
